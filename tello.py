@@ -30,6 +30,8 @@ class Tello:
     STICK_M = 330
     STICK_L = 60
 
+    DRIFT_COUNT = 100
+
     # Format
     S11 = Struct("!11B")
     S12 = Struct("!12B")
@@ -110,6 +112,9 @@ class Tello:
         self.is_tracking = False
         self.is_detect = False
         self.is_autopilot = False
+
+        # ただよい
+        self.drift = self.DRIFT_COUNT
 
         # Start Tracking Timer
         self.thread_timer_detect = Thread(target=self._timer_detect)
@@ -214,7 +219,7 @@ class Tello:
                     self.yaw = self.STICK_HOVER
                     self.pitch = self.STICK_HOVER
                     self.roll = self.STICK_HOVER
-            
+
     def _on_release(self, key):
         if not self.is_autopilot:
             self.thr = self.STICK_HOVER

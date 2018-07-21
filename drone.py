@@ -132,8 +132,25 @@ if __name__ == '__main__':
                             drone.thr = drone.STICK_HOVER + drone.STICK_L
                         else:
                             drone.thr = drone.STICK_HOVER
+
+                        if drone.drift > 0:
+                            #print(drone.drift)
+                            #drone.thr = drone.STICK_HOVER - drone.STICK_L
+                            drone.drift = drone.drift - 1
+                            if drone.drift == 0 :
+                                drone.thr = drone.STICK_HOVER - 150
+                                print(drone.thr)
+                                drone.drift = -1 * drone.DRIFT_COUNT
+                        elif drone.drift < 0:
+                            #print(drone.drift)
+                            #drone.thr = drone.STICK_HOVER + drone.STICK_L
+                            drone.drift = drone.drift + 1
+                            if drone.drift == 0 :
+                                drone.thr = drone.STICK_HOVER + 120
+                                print(drone.thr)
+                                drone.drift = drone.DRIFT_COUNT
                 except Exception:
-                    break 
+                    break
             else:
                 tracking = 0
             cv2.putText(frame, 'Tracking:' + str(drone.is_tracking) + ' AutoPilot:' + str(drone.is_autopilot), (5, 710), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1, cv2.LINE_AA)
