@@ -37,6 +37,8 @@ class Tello:
     SPEED_M = 330
     SPEED_L = 60
 
+    DEFAULT_TRACKING_INTERVAL = 1
+
     # Format
     S11 = Struct("!11B")
     S12 = Struct("!12B")
@@ -85,7 +87,7 @@ class Tello:
         self._echo_off()
 
         # Initialize Tracking Interval
-        self.tracking_interval = 2
+        self.tracking_interval = self.DEFAULT_TRACKING_INTERVAL
 
         # Start Key Listener
         self.thread_key_listener = Thread(target=self._key_listener)
@@ -124,6 +126,7 @@ class Tello:
 
         # ただよい
         self.drift = self.DRIFT_COUNT
+        self.drift_acceleration = 0
 
         # Start Tracking Timer
         self.thread_timer_detect = Thread(target=self._timer_detect)
@@ -172,6 +175,8 @@ class Tello:
                 cmd = list(self.CMD_LAND)
                 self._cmd_tx(cmd)
                 self.in_flight = False
+                self.is_tracking = False
+                self.is_autopilot = False
             elif not self.in_flight and keyPressed == 'Key.enter':
                 self.stop_drone = True
                 self._echo_on()
