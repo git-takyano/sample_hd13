@@ -154,9 +154,44 @@ class Tello:
             for m in sub.listen():
                 print(m['data'])
                 if m['data'] != 1 :
-                    self._on_press_sub(m['data'].decode())
-                    t = Timer(0.5, self._on_release, [None])
-                    t.start()
+                    print("The data is {0}".format(m['data']))
+                    print("The decode data is {0}".format(m['data'].decode()))
+                    if m['data'].decode() == "bang":
+                        print("Received the Bang message")
+                        t0 = Timer(0.5, self._bang_down)
+                        t0.start()
+
+                        t1 = Timer(0.8,self._on_release,[None])
+                        t1.start()
+
+                        t2 = Timer(1.5, self._bang_up)
+                        t2.start()
+
+                        t3 = Timer(2.5,self._on_release,[None])
+                        t3.start()
+                        # t0 = Timer(0.5, self._on_press_sub, 'S')
+                        # t0.start()
+                        #
+                        # t1 = Timer(1.0, self._on_release, [None])
+                        # t1.start()
+                        #
+                        # t2 = Timer(1.5, self._on_press_sub, 'w')
+                        # t2.start()
+                        #
+                        # t3 = Timer(2.0, self._on_release, [None])
+                        # t3.start()
+                    elif m['data'].decode() == "start":
+                        cmd = list(self.CMD_TAKEOFF)
+                        self._cmd_tx(cmd)
+                        self.in_flight = True
+                    elif m['data'].decode() == "stop":
+                        cmd = list(self.CMD_LAND)
+                        self._cmd_tx(cmd)
+                        self.in_flight = False
+                    else:
+                        self._on_press_sub(m['data'].decode())
+                        t = Timer(0.5, self._on_release, [None])
+                        t.start()
 
     def _on_press(self, key):
         try:
@@ -366,11 +401,19 @@ class Tello:
 
         return seed
 
-    def set_up(speed=SPEED_M) :
+    def _set_up(self,speed=SPEED_M) :
         self.thr = self.STICK_HOVER + speed
 
-    def set_down(speed=SPEED_M) :
+    def _set_down(self,speed=SPEED_M) :
         self.thr = self.STICK_HOVER - speed
 
-    def set_down(speed=SPEED_M) :
+    def _bang_down(self,speed=SPEED_H):
+        self.thr = self.STICK_HOVER - speed
+        self.pitch = self.STICK_HOVER - speed
+
+    def _bang_up(self,speed=SPEED_M):
         self.thr = self.STICK_HOVER + speed
+        self.pitch = self.STICK_HOVER + speed
+
+#    def set_down(speed=SPEED_M) :
+#        self.thr = self.STICK_HOVER + speed
