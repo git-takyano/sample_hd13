@@ -9,6 +9,7 @@ from pynput.keyboard import Key, Listener
 from threading import Thread, Timer
 import time
 import datetime
+import redis
 
 
 class Tello:
@@ -31,6 +32,10 @@ class Tello:
     STICK_L = 60
 
     DRIFT_COUNT = 100
+
+    SPEED_H = 660
+    SPEED_M = 330
+    SPEED_L = 60
 
     # Format
     S11 = Struct("!11B")
@@ -100,6 +105,10 @@ class Tello:
         self.thread_flight_ctrl = Thread(target=self._flight_ctrl)
         self.thread_flight_ctrl.start()
 
+        # subscribe message
+        self.thread_subscriber = Thread(target=self._subscribe_message)
+        self.thread_subscriber.start()
+
         # Start Requesting I-Frame
         self.thread_req_iframe = Thread(target=self._req_iframe)
         self.thread_req_iframe.start()
@@ -137,56 +146,22 @@ class Tello:
         ) as listener:
             listener.join()
 
+    def _subscribe_message(self) :
+        r = redis.client.StrictRedis()
+        sub = r.pubsub()
+        sub.subscribe('jelly')
+        while True:
+            for m in sub.listen():
+                print(m['data'])
+                if m['data'] != 1 :
+                    self._on_press_sub(m['data'].decode())
+                    t = Timer(0.5, self._on_release, [None])
+                    t.start()
+
     def _on_press(self, key):
         try:
             keyPressed = '{0}'.format(key.char)
-            if not self.is_tracking and keyPressed == '9':
-                self.is_tracking = True
-            elif self.is_tracking and keyPressed == '9':
-                self.is_tracking = False
-                self.is_autopilot = False
-            elif self.is_tracking and not self.is_autopilot and keyPressed == '0':
-                self.is_autopilot = True
-            elif self.is_tracking and self.is_autopilot and keyPressed == '0':
-                self.is_autopilot = False
-            elif not self.is_autopilot:
-                if keyPressed == 'W':
-                    self.thr = self.STICK_HOVER + self.STICK_H
-                elif keyPressed == 'w':
-                    self.thr = self.STICK_HOVER + self.STICK_M
-                elif keyPressed == 'S':
-                    self.thr = self.STICK_HOVER - self.STICK_H
-                elif keyPressed == 's':
-                    self.thr = self.STICK_HOVER - self.STICK_M
-                elif keyPressed == 'A':
-                    self.yaw = self.STICK_HOVER - self.STICK_H
-                elif keyPressed == 'a':
-                    self.yaw = self.STICK_HOVER - self.STICK_M
-                elif keyPressed == 'D':
-                    self.yaw = self.STICK_HOVER + self.STICK_H
-                elif keyPressed == 'd':
-                    self.yaw = self.STICK_HOVER + self.STICK_M
-                elif keyPressed == 'I':
-                    self.pitch = self.STICK_HOVER + self.STICK_H
-                elif keyPressed == 'i':
-                    self.pitch = self.STICK_HOVER + self.STICK_M
-                elif keyPressed == 'K':
-                    self.pitch = self.STICK_HOVER - self.STICK_H
-                elif keyPressed == 'k':
-                    self.pitch = self.STICK_HOVER - self.STICK_M
-                elif keyPressed == 'J':
-                    self.roll = self.STICK_HOVER - self.STICK_H
-                elif keyPressed == 'j':
-                    self.roll = self.STICK_HOVER - self.STICK_M
-                elif keyPressed == 'L':
-                    self.roll = self.STICK_HOVER + self.STICK_H
-                elif keyPressed == 'l':
-                    self.roll = self.STICK_HOVER + self.STICK_M
-                else:
-                    self.thr = self.STICK_HOVER
-                    self.yaw = self.STICK_HOVER
-                    self.pitch = self.STICK_HOVER
-                    self.roll = self.STICK_HOVER
+            self._on_press_sub(keyPressed)
         except AttributeError:
             keyPressed = '{0}'.format(key)
             if not self.in_flight and keyPressed == 'Key.space':
@@ -219,6 +194,56 @@ class Tello:
                     self.yaw = self.STICK_HOVER
                     self.pitch = self.STICK_HOVER
                     self.roll = self.STICK_HOVER
+
+    def _on_press_sub(self, keyPressed):
+        if not self.is_tracking and keyPressed == '9':
+            self.is_tracking = True
+        elif self.is_tracking and keyPressed == '9':
+            self.is_tracking = False
+            self.is_autopilot = False
+        elif self.is_tracking and not self.is_autopilot and keyPressed == '0':
+            self.is_autopilot = True
+        elif self.is_tracking and self.is_autopilot and keyPressed == '0':
+            self.is_autopilot = False
+        elif not self.is_autopilot:
+            if keyPressed == 'W':
+                self.thr = self.STICK_HOVER + self.STICK_H
+            elif keyPressed == 'w':
+                self.thr = self.STICK_HOVER + self.STICK_M
+            elif keyPressed == 'S':
+                self.thr = self.STICK_HOVER - self.STICK_H
+            elif keyPressed == 's':
+                self.thr = self.STICK_HOVER - self.STICK_M
+            elif keyPressed == 'A':
+                self.yaw = self.STICK_HOVER - self.STICK_H
+            elif keyPressed == 'a':
+                self.yaw = self.STICK_HOVER - self.STICK_M
+            elif keyPressed == 'D':
+                self.yaw = self.STICK_HOVER + self.STICK_H
+            elif keyPressed == 'd':
+                self.yaw = self.STICK_HOVER + self.STICK_M
+            elif keyPressed == 'I':
+                self.pitch = self.STICK_HOVER + self.STICK_H
+            elif keyPressed == 'i':
+                self.pitch = self.STICK_HOVER + self.STICK_M
+            elif keyPressed == 'K':
+                self.pitch = self.STICK_HOVER - self.STICK_H
+            elif keyPressed == 'k':
+                self.pitch = self.STICK_HOVER - self.STICK_M
+            elif keyPressed == 'J':
+                self.roll = self.STICK_HOVER - self.STICK_H
+            elif keyPressed == 'j':
+                self.roll = self.STICK_HOVER - self.STICK_M
+            elif keyPressed == 'L':
+                self.roll = self.STICK_HOVER + self.STICK_H
+            elif keyPressed == 'l':
+                self.roll = self.STICK_HOVER + self.STICK_M
+            else:
+                self.thr = self.STICK_HOVER
+                self.yaw = self.STICK_HOVER
+                self.pitch = self.STICK_HOVER
+                self.roll = self.STICK_HOVER
+
 
     def _on_release(self, key):
         if not self.is_autopilot:
@@ -340,3 +365,12 @@ class Tello:
             size = size - 1
 
         return seed
+
+    def set_up(speed=SPEED_M) :
+        self.thr = self.STICK_HOVER + speed
+
+    def set_down(speed=SPEED_M) :
+        self.thr = self.STICK_HOVER - speed
+
+    def set_down(speed=SPEED_M) :
+        self.thr = self.STICK_HOVER + speed

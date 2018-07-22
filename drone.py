@@ -18,7 +18,7 @@ L0 = 100
 S0 = 25600
 
 # Base Distance
-LB = 120
+LB = 40
 
 # Initialize Tracker
 def tracker_init(frame):
@@ -114,41 +114,43 @@ if __name__ == '__main__':
                     cv2.putText(frame, ' D:' + str(d) + 'cm X:' + str(dx) + 'px Y:' + str(dy) + 'px', (360, 710), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 1, cv2.LINE_AA)
                     cv2.rectangle(frame,(x,y),(x+w,y+h),(255,0,0),2)
                     if drone.is_autopilot:
+                        pilot_finish_ = 0
                         if (d - LB) > 15:
                             drone.pitch = drone.STICK_HOVER + drone.STICK_L
                         elif (d - LB) < -15:
                             drone.pitch = drone.STICK_HOVER - drone.STICK_L
                         else:
                             drone.pitch = drone.STICK_HOVER
+                            pilot_finish_ = pilot_finish_ + 1
                         if dx > 80:
                             drone.roll = drone.STICK_HOVER + drone.STICK_L
                         elif dx < -80:
                             drone.roll = drone.STICK_HOVER - drone.STICK_L
                         else:
                             drone.roll = drone.STICK_HOVER
+                            pilot_finish_ = pilot_finish_ + 1
                         if dy > 50:
-                            drone.thr = drone.STICK_HOVER - drone.STICK_L
+                            drone.thr = drone.STICK_HOVER - drone.STICK_L - 5
                         elif dy < -50:
                             drone.thr = drone.STICK_HOVER + drone.STICK_L
                         else:
                             drone.thr = drone.STICK_HOVER
+                            pilot_finish_ = pilot_finish_ + 1
+                        if pilot_finish_ > 2 :
+                            drone.is_autopilot = False
 
-                        if drone.drift > 0:
-                            #print(drone.drift)
-                            #drone.thr = drone.STICK_HOVER - drone.STICK_L
-                            drone.drift = drone.drift - 1
-                            if drone.drift == 0 :
-                                drone.thr = drone.STICK_HOVER - 150
-                                print(drone.thr)
-                                drone.drift = -1 * drone.DRIFT_COUNT
-                        elif drone.drift < 0:
-                            #print(drone.drift)
-                            #drone.thr = drone.STICK_HOVER + drone.STICK_L
-                            drone.drift = drone.drift + 1
-                            if drone.drift == 0 :
-                                drone.thr = drone.STICK_HOVER + 120
-                                print(drone.thr)
-                                drone.drift = drone.DRIFT_COUNT
+                    #if drone.drift > 0:
+                    #    drone.drift = drone.drift - 1
+                    #    if drone.drift == 0 :
+                    #        drone.thr = drone.STICK_HOVER - 150
+                    #        print(drone.thr)
+                    #        drone.drift = -1 * drone.DRIFT_COUNT
+                    #lif drone.drift < 0:
+                    #    drone.drift = drone.drift + 1
+                    #    if drone.drift == 0 :
+                    #        drone.thr = drone.STICK_HOVER + 120
+                    #        print(drone.thr)
+                    #        drone.drift = drone.DRIFT_COUNT
                 except Exception:
                     break
             else:
