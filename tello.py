@@ -158,28 +158,42 @@ class Tello:
                     print("The decode data is {0}".format(m['data'].decode()))
                     if m['data'].decode() == "bang":
                         print("Received the Bang message")
-                        t0 = Timer(0.5, self._bang_down)
-                        t0.start()
+                        self._bang_down()
 
-                        t1 = Timer(0.8,self._on_release,[None])
+                        t1 = Timer(0.3,self._on_release,[None])
                         t1.start()
 
-                        t2 = Timer(1.5, self._bang_up)
+                        t2 = Timer(1.0, self._bang_up)
                         t2.start()
 
-                        t3 = Timer(2.5,self._on_release,[None])
+                        t3 = Timer(2.0,self._on_release,[None])
                         t3.start()
-                        # t0 = Timer(0.5, self._on_press_sub, 'S')
-                        # t0.start()
-                        #
-                        # t1 = Timer(1.0, self._on_release, [None])
-                        # t1.start()
-                        #
-                        # t2 = Timer(1.5, self._on_press_sub, 'w')
-                        # t2.start()
-                        #
-                        # t3 = Timer(2.0, self._on_release, [None])
-                        # t3.start()
+                    elif m['data'].decode() == "mawari":
+                        self.yaw = self.STICK_HOVER - self.STICK_H
+                        t3 = Timer(4.5,self._on_release,[None])
+                        t3.start()
+                    elif m['data'].decode() == "ote":
+                        self._ote_down()
+
+                        t1 = Timer(0.5,self._on_release,[None])
+                        t1.start()
+
+                        t2 = Timer(1.5, self._ote_up)
+                        t2.start()
+
+                        t3 = Timer(2.0,self._on_release,[None])
+                        t3.start()
+                    elif m['data'].decode() == "okawari":
+                        self._okawari_down()
+
+                        t1 = Timer(0.5,self._on_release,[None])
+                        t1.start()
+
+                        t2 = Timer(1.5, self._okawari_up)
+                        t2.start()
+
+                        t3 = Timer(2.0,self._on_release,[None])
+                        t3.start()
                     elif m['data'].decode() == "start":
                         cmd = list(self.CMD_TAKEOFF)
                         self._cmd_tx(cmd)
@@ -408,12 +422,32 @@ class Tello:
         self.thr = self.STICK_HOVER - speed
 
     def _bang_down(self,speed=SPEED_H):
-        self.thr = self.STICK_HOVER - speed
+        self.thr = self.STICK_HOVER - speed - 20
         self.pitch = self.STICK_HOVER - speed
 
     def _bang_up(self,speed=SPEED_M):
         self.thr = self.STICK_HOVER + speed
         self.pitch = self.STICK_HOVER + speed
+
+    def _ote_down(self):
+        self.thr = self.STICK_HOVER - self.SPEED_M - 20
+        self.roll = self.STICK_HOVER - self.SPEED_M
+        self.pitch = self.STICK_HOVER + self.SPEED_M - 20
+
+    def _ote_up(self):
+        self.thr = self.STICK_HOVER + self.SPEED_M
+        self.roll = self.STICK_HOVER + self.SPEED_M
+        self.pitch = self.STICK_HOVER - self.SPEED_M + 20
+
+    def _okawari_down(self):
+        self.thr = self.STICK_HOVER - self.SPEED_M - 20
+        self.roll = self.STICK_HOVER + self.SPEED_M
+        self.pitch = self.STICK_HOVER + self.SPEED_M - 20
+
+    def _okawari_up(self):
+        self.thr = self.STICK_HOVER + self.SPEED_M
+        self.roll = self.STICK_HOVER - self.SPEED_M
+        self.pitch = self.STICK_HOVER - self.SPEED_M + 20
 
 #    def set_down(speed=SPEED_M) :
 #        self.thr = self.STICK_HOVER + speed
